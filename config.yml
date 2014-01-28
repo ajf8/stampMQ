@@ -1,0 +1,69 @@
+connectors:
+    - port: 8080
+      protocol: stomp
+      bind: 0.0.0.0
+    - port: 61616
+      protocol: stomp
+      bind: 0.0.0.0
+      ssl:
+          cert_file: /home/ajf/workspace-eclipse/bmq/extra/server.pem
+          cert_password: test
+users:
+    admin:
+        password: secret
+        roles:
+          - mcollective
+          - admins
+    mcollective:
+        password: marionette
+        roles:
+          - mcollective
+acl:
+     - destination: ".*"
+     - destination: "^/(topic|queue)/mcollective..*"
+       write:
+           - admins
+       read:
+           - admins
+     - destination: "^/queue/mcollective.nodes.*"
+       write:
+           - admins
+       read:
+           - admins
+           - mcollective
+     - destination: "^/topic/mcollective..*.agent$"
+       write:
+           - admins
+       read:
+           - admins
+           - mcollective
+     - destination: "^/queue/mcollective.reply..*"
+       write:
+           - admins
+           - mcollective
+       read:
+           - admins
+     - destination: "^/topic/mcollective.registration.(command|agent)$"
+       write:
+           - admins
+           - mcollective
+       read:
+           - admins
+           - mcollective
+     - destination: "^/queue/test$"
+       write:
+           - admins
+       read:
+           - admins
+logging:
+    log4j.rootLogger: "DEBUG, rootConsoleAppender, rootFileAppender"
+    # Name of appender is the fully.qualified.name.of.appender.class
+    log4j.appender.rootConsoleAppender: "org.apache.log4j.ConsoleAppender"
+    log4j.appender.rootConsoleAppender.layout: "org.apache.log4j.PatternLayout"
+    log4j.appender.rootConsoleAppender.layout.ConversionPattern: "%d %-5p [%c] - %m%n"
+    log4j.appender.rootFileAppender: "org.apache.log4j.FileAppender"
+    log4j.appender.rootFileAppender.layout: "org.apache.log4j.PatternLayout"
+    log4j.appender.rootFileAppender.layout.ConversionPattern: "%d %-5p [%c] - %m%n"
+    log4j.appender.rootFileAppender.File: "test.log"
+    # set whether to overwrite or append to the file
+    log4j.appender.rootFileAppender.Append: false

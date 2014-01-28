@@ -1,0 +1,15 @@
+#ifndef STAMPMQ_SUBSCRIPTION_TYPE_HPP
+#define STAMPMQ_SUBSCRIPTION_TYPE_HPP
+
+namespace stampmq {
+
+enum SUBSCRIPTION_TYPE {
+    NONE,
+    AUTO,
+    CLIENT,
+    CLIENT_INDIVIDUAL
+};
+
+}
+
+#endif
