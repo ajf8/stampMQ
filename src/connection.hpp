@@ -23,6 +23,9 @@
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 #include <boost/utility.hpp>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 #include "subscription_type.hpp"
 #include "socket.hpp"
@@ -74,6 +77,7 @@ public:
     void Ack(const std::string &msg_id);
     void QueueFrame(FramePtr frame);
     void SendFrame(FramePtr frame);
+    std::string NewUuid();
     void Disconnect();
     PrincipalPtr Authenticate(std::string user, std::string pass);
     bool IsAuthenticated();
@@ -102,6 +106,7 @@ protected:
     boost::signals2::connection invalidate_connection_;
     std::string id_;
     std::map<std::string, MessageDeliveryPtr> ack_map_;
+    boost::uuids::uuid uuidgen_;
 };
 
 typedef std::shared_ptr<Connection> ConnectionPtr;

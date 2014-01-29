@@ -51,8 +51,8 @@ Connection::Connection(boost::asio::io_service& io_service, Connector& connector
     AclChainPtr aclc = srv.acl_chain();
     aclc->invalidated().connect(boost::bind(&Connection::InvalidateAccessCache, this));
 
-    boost::uuids::uuid uuid = boost::uuids::random_generator()();
-    id_ = boost::lexical_cast<std::string>(uuid);
+    uuidgen_ = boost::uuids::random_generator()();
+    id_ = NewUuid();
 }
 
 Connection::~Connection()
@@ -62,6 +62,11 @@ Connection::~Connection()
     Server& srv = server();
     AclChainPtr aclc = srv.acl_chain();
     aclc->invalidated().disconnect(invalidate_connection_);
+}
+
+std::string Connection::NewUuid()
+{
+    return boost::lexical_cast<std::string>(uuidgen_);
 }
 
 Server& Connection::server()

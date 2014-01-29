@@ -39,8 +39,8 @@ public:
     const std::string& GetHeader(const char *hdkey);
     headers_t& headers();
     bool HeaderExists(const char *key);
-    std::string& body();
     void AppendToBody(char c);
+    const std::string& body();
     long to_receive();
     virtual void Process(ConnectionPtr conn);
     virtual bool RequiresAuthentication();

@@ -25,6 +25,8 @@ using namespace log4cxx;
 
 namespace stampmq {
 
+LoggerPtr hub_logger(Logger::getLogger("stampmq.Hub"));
+
 Hub::Hub()
 {
 
@@ -61,6 +63,7 @@ SubscriptionPtr Hub::Subscribe(ConnectionPtr conn, const std::string& dstname, S
 
 void Hub::Send(const std::string& dstname, FramePtr frame)
 {
+    LOG4CXX_TRACE(hub_logger, "body:\n" << frame->body() << "\n");
     GetDestination(dstname)->Deliver(frame);
 }
 

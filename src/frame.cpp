@@ -69,14 +69,13 @@ void Frame::AppendToBody(char c)
         to_receive_--;
 }
 
+const std::string& Frame::body() {
+    return body_;
+}
+
 long Frame::to_receive()
 {
     return to_receive_;
-}
-
-std::string& Frame::body()
-{
-    return body_;
 }
 
 void Frame::Process(ConnectionPtr conn)

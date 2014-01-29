@@ -50,11 +50,13 @@ void SubscribeFrame::Process(ConnectionPtr conn)
     if (!HeaderExists("destination")) {
         throw ConnectionException("destination header required.");
     }
-    if (!HeaderExists("id")) {
-        throw ConnectionException("id header required.");
+    std::string id;
+    if (HeaderExists("id")) {
+        id = headers_["id"];
+    } else {
+        id = conn->NewUuid(); // create our own subscription ID
     }
     const std::string& dest = headers_["destination"];
-    const std::string& id = headers_["id"];
     if (!conn->IsAllowed(dest, read)) {
         throw ConnectionException("not authorized to read destination: " + dest);
     }
