@@ -100,6 +100,7 @@ protected:
     CONN_STATE state_;
     FramePtr frame_;
     std::map<std::string, SubscriptionPtr> subscriptions_;
+    std::map<std::string, SubscriptionPtr> subscriptions_by_destination_;
     boost::shared_mutex subscriptions_mtx_;
     access_cache access_cache_;
     boost::shared_mutex access_cache_mtx_;

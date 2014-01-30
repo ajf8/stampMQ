@@ -21,6 +21,7 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/lexical_cast.hpp>
 #include <log4cxx/logger.h>
 
@@ -85,6 +86,7 @@ SubscriptionPtr Connection::Subscribe(const std::string& dstname, SUBSCRIPTION_T
     SubscriptionPtr sub = server().hub().Subscribe(shared_from_this(), dstname, type, id);
     boost::unique_lock<boost::shared_mutex> lock(subscriptions_mtx_);
     subscriptions_[id] = sub;
+    subscriptions_by_destination_[dstname] = sub;
     return sub;
 }
 
@@ -100,13 +102,27 @@ SubscriptionPtr Connection::GetSubscriptionById(const std::string& id) {
 void Connection::Unsubscribe(const std::string& id)
 {
     boost::unique_lock<boost::shared_mutex> lock(subscriptions_mtx_);
-    if (subscriptions_.count(id) > 0) {
-        SubscriptionPtr sub = subscriptions_[id];
-        LOG4CXX_DEBUG (conn_logger, "unsubscribe id=" << id << ", name=" << sub->destination()->name());
-        subscriptions_[id]->Disconnect();
-        subscriptions_.erase(id);
+
+    if (boost::starts_with(id, "/queue/") || boost::starts_with(id, "/topic/")) {
+        if (subscriptions_by_destination_.count(id) > 0) {
+            SubscriptionPtr sub = subscriptions_by_destination_[id];
+            LOG4CXX_DEBUG (conn_logger, "unsubscribe dest=" << id);
+            sub->Disconnect();
+            subscriptions_.erase(sub->id());
+            subscriptions_by_destination_.erase(id);
+        } else {
+            LOG4CXX_WARN (conn_logger, "unable to find subscription with ID: " << id);
+        }
     } else {
-        LOG4CXX_WARN (conn_logger, "unable to find subscription with ID: " << id);
+        if (subscriptions_.count(id) > 0) {
+            SubscriptionPtr sub = subscriptions_[id];
+            LOG4CXX_DEBUG (conn_logger, "unsubscribe id=" << id << ", name=" << sub->destination()->name());
+            subscriptions_[id]->Disconnect();
+            subscriptions_.erase(id);
+            subscriptions_by_destination_.erase(sub->destination()->name());
+        } else {
+            LOG4CXX_WARN (conn_logger, "unable to find subscription with ID: " << id);
+        }
     }
 }
 
@@ -124,6 +140,7 @@ void Connection::Disconnect()
     }
     boost::upgrade_to_unique_lock<boost::shared_mutex> wlock(uplock);
     subscriptions_.clear();
+    subscriptions_by_destination_.clear();
     connector_.Disconnect(shared_from_this());
     get_socket().close();
 }
@@ -171,6 +188,7 @@ void Connection::DoRead()
             }
             for (unsigned int i = 0; i < length; i++) {
                 char c = netbuf_[i];
+                std::cout << c;
                 if (state_ == body && c == '\0' && frame_->to_receive() < 1) {
                     state_ = none;
                     try {
@@ -233,7 +251,7 @@ void Connection::QueueDelivery(DeliveryPtr delivery)
         return;
     }
     {
-        boost::unique_lock<boost::shared_mutex> lock(send_queue_mtx_);
+        //boost::unique_lock<boost::shared_mutex> lock(send_queue_mtx_);
         send_queue_.push(delivery);
     }
     if (sending_ == false) {
@@ -273,6 +291,7 @@ void Connection::Ack(const std::string &msg_id) {
 }
 
 void Connection::QueueFrame(FramePtr frame) {
+    LOG4CXX_TRACE(conn_logger, "body:\n" << frame->body() << "\n");
     DeliveryPtr delivery = std::make_shared<FrameDelivery>(frame, shared_from_this());
     QueueDelivery(delivery);
 }
@@ -292,7 +311,7 @@ void Connection::SendFrame(FramePtr frame) {
             sending_ = false;
             Disconnect();
         } else {
-            boost::shared_lock<boost::shared_mutex> lock(send_queue_mtx_);
+            //boost::shared_lock<boost::shared_mutex> lock(send_queue_mtx_);
             if (send_queue_.size() > 0) {
                 io_service_.post(boost::bind(&Connection::ProcessQueue, this));
             } else {
